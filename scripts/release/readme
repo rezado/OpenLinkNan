@@ -1,0 +1,34 @@
+### Running VCS Simulation
+
+```bash
+# Compile VCS simulation
+make simv
+
+# Run test case (default is dhrystone.bin)
+make run
+
+# Run specific test case
+make run RUN_BIN=hello.bin
+```
+
+### Running Verilator Simulation
+
+```bash
+# Compile Verilator simulation
+make emu
+
+# Run test case
+make emu-run
+```
+- DUMP=1: dump waveforms
+- DIFF=0: disable NEMU difftest
+
+### Running Xcelium Simulation
+
+```bash
+
+# Compile Xcelium simulation
+make xsim
+
+# Run test case
+make xrun

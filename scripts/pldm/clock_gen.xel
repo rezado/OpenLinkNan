@@ -1,0 +1,2 @@
+clockOption -add {technology CAKE 1}
+clockFrequency -add {tb_top.clock 50MHz}

@@ -1,0 +1,36 @@
+[submodule "dependencies/aia"]
+	path = dependencies/aia
+	url = https://github.com/OpenXiangShan/ChiselAIA.git
+[submodule "dependencies/cde"]
+	path = dependencies/cde
+	url = https://github.com/chipsalliance/cde.git
+[submodule "dependencies/cpl2"]
+	path = dependencies/cpl2
+	url = https://github.com/OpenXiangShan-Nanhu/CoupledL2.git
+[submodule "dependencies/difftest"]
+	path = dependencies/difftest
+	url = https://github.com/OpenXiangShan-Nanhu/difftest.git
+[submodule "dependencies/diplomacy"]
+	path = dependencies/diplomacy
+	url = https://github.com/chipsalliance/diplomacy.git
+[submodule "dependencies/dramsim"]
+	path = dependencies/dramsim
+	url = https://github.com/OpenXiangShan/DRAMsim3.git
+[submodule "dependencies/hardfloat"]
+	path = dependencies/hardfloat
+	url = https://github.com/ucb-bar/berkeley-hardfloat.git
+[submodule "dependencies/nanhu"]
+	path = dependencies/nanhu
+	url = https://github.com/OpenXiangShan-Nanhu/OpenNanhu-V5.git
+[submodule "dependencies/rocket-chip"]
+	path = dependencies/rocket-chip
+	url = https://github.com/OpenXiangShan-Nanhu/rocket-chip.git
+[submodule "dependencies/xs-utils"]
+	path = dependencies/xs-utils
+	url = https://github.com/OpenXiangShan-Nanhu/xs-utils.git
+[submodule "dependencies/zhujiang"]
+	path = dependencies/zhujiang
+	url = https://github.com/OpenXiangShan-Nanhu/OpenZhuJiang.git
+[submodule "ready-to-run"]
+	path = ready-to-run
+	url = https://github.com/OpenXiangShan-Nanhu/ready-to-run.git
