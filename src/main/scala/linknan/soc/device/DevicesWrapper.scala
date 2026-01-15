@@ -7,6 +7,7 @@ import linknan.generator.AddrConfig
 import linknan.soc.LinkNanParamsKey
 import linknan.utils.connectByName
 import org.chipsalliance.cde.config.Parameters
+import xiangshan.XSCoreParamsKey
 import org.chipsalliance.diplomacy.lazymodule._
 import org.chipsalliance.diplomacy.nodes.MonitorsEnabled
 import xijiang.NodeType
@@ -81,6 +82,7 @@ class DevicesWrapper(cfgParams: AxiParams, dmaParams: AxiParams)(implicit p: Par
     extDmaParams.dataBits
   )(p.alterPartial {
     case MonitorsEnabled => false
+    case XSCoreParamsKey => p(XSCoreParamsKey)
   }))
   private val pb = Module(tlDevBlock.module)
 
@@ -103,6 +105,11 @@ class DevicesWrapper(cfgParams: AxiParams, dmaParams: AxiParams)(implicit p: Par
     val debug = pb.dev.debug.cloneType
     val resetCtrl = pb.dev.resetCtrl.cloneType
     val dft = new BaseTestBundle
+    val dse_rst = Input(Reset())
+    val dse_ctrlSel = Output(UInt(8.W))
+    val dse_maxInstrCnt = Output(UInt(64.W))
+    val dse_epoch = Output(UInt(64.W))
+    val dse_maxEpoch = Output(UInt(64.W))
   })
   private val resetGen = Module(new ResetGen)
   resetGen.clock := sys_clk
@@ -144,4 +151,10 @@ class DevicesWrapper(cfgParams: AxiParams, dmaParams: AxiParams)(implicit p: Par
   pb.dev.hartAvail := io.cpu.hartAvail
   io.resetCtrl.hartResetReq.foreach(_ := pb.dev.resetCtrl.hartResetReq.get)
   pb.dev.resetCtrl.hartIsInReset := io.resetCtrl.hartIsInReset
+
+  pb.dev.dse_rst := io.dse_rst
+  io.dse_ctrlSel := pb.dev.dse_ctrlSel
+  io.dse_maxInstrCnt := pb.dev.dse_maxInstrCnt
+  io.dse_epoch := pb.dev.dse_epoch
+  io.dse_maxEpoch := pb.dev.dse_maxEpoch
 }

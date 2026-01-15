@@ -14,6 +14,7 @@ import freechips.rocketchip.util.AsyncQueueParams
 import linknan.soc.LinkNanParamsKey
 import linknan.utils.BitSynchronizer
 import org.chipsalliance.cde.config.Parameters
+import xiangshan.XSCoreParamsKey
 import org.chipsalliance.diplomacy.lazymodule._
 import xs.utils.dft.BaseTestBundle
 import xs.utils.{IntBuffer, ResetGen}
@@ -27,6 +28,11 @@ class TLDeviceBlockIO(coreNum: Int, extIntrNum: Int)(implicit p: Parameters) ext
   val hartAvail = Input(Vec(coreNum, Bool()))
   val resetCtrl = new ResetCtrlIO(coreNum)(p)
   val debug = new DebugIO()(p)
+  val dse_rst = Input(Reset())
+  val dse_ctrlSel = Output(UInt(8.W))
+  val dse_maxInstrCnt = Output(UInt(64.W))
+  val dse_epoch = Output(UInt(64.W))
+  val dse_maxEpoch = Output(UInt(64.W))
 }
 
 class TLDeviceBlockInner(coreNum: Int, extIntrNum: Int)(implicit p: Parameters) extends LazyModule with BindingScope {
@@ -38,6 +44,7 @@ class TLDeviceBlockInner(coreNum: Int, extIntrNum: Int)(implicit p: Parameters) 
   private val xbar = LazyModule(new TLXbar)
   private val plic = LazyModule(new TLPLIC(PLICParams(baseAddress = p(LinkNanParamsKey).plicBase), 8))
   private val debug = LazyModule(new DebugModule(coreNum))
+  private val dseCtrl = LazyModule(new DSECtrlUnit(DSEParams()))
 
   private val intSourceNode = IntSourceNode(IntSourcePortSimple(extIntrNum, ports = 1, sources = 1))
   private val debugIntSink = IntSinkNode(IntSinkPortSimple(coreNum, 1))
@@ -46,6 +53,7 @@ class TLDeviceBlockInner(coreNum: Int, extIntrNum: Int)(implicit p: Parameters) 
   xbar.node :=* TLBuffer() :=* asyncSinkNode
   plic.node :*= xbar.node
   debug.debug.node :*= xbar.node
+  dseCtrl.ctrlnode :*= xbar.node
   plic.intnode := IntBuffer(3, cdc = true) := intSourceNode
 
   debugIntSink :*= IntBuffer(3, cdc = true) :*= debug.debug.dmOuter.dmOuter.intnode
@@ -92,6 +100,13 @@ class TLDeviceBlockInner(coreNum: Int, extIntrNum: Int)(implicit p: Parameters) 
     debug.module.io.debugIO <> io.debug
     debug.module.io.debugIO.clock := clock
     debug.module.io.debugIO.reset := reset
+
+    dseCtrl.module.io.clk := clock
+    dseCtrl.module.io.rst := io.dse_rst
+    io.dse_ctrlSel := dseCtrl.module.io.ctrlSel
+    io.dse_maxInstrCnt := dseCtrl.module.io.maxInstrCnt
+    io.dse_epoch := dseCtrl.module.io.epoch
+    io.dse_maxEpoch := dseCtrl.module.io.maxEpoch
   }
 }
 
@@ -126,7 +141,9 @@ class TLDeviceBlock(coreNum: Int, extIntrNum: Int, cfgIdBits: Int, cfgDataBits: 
   private val sbaAsyncSink = LazyModule(new TLAsyncCrossingSink(AsyncQueueParams(1)))
   private val cfgAsyncSrc = LazyModule(new TLAsyncCrossingSource())
 
-  private val inner = LazyModule(new TLDeviceBlockInner(coreNum, extIntrNum)(innerP))
+  private val inner = LazyModule(new TLDeviceBlockInner(coreNum, extIntrNum)(innerP.alterPartial({
+    case XSCoreParamsKey => p(XSCoreParamsKey)  // 传递核心参数
+  })))
   inner.asyncSinkNode :=* cfgAsyncSrc.node :=* clientNode
   sbaNode :*= AXI4Buffer() :*= AXI4UserYanker() :*=
   AXI4Deinterleaver(8) :*= AXI4Buffer() :*=

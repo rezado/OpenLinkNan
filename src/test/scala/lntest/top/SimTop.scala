@@ -72,6 +72,11 @@ class SimTop(implicit val p: Parameters) extends Module with NocIOHelper {
   private val doBlockTest = p(LinkNanParamsKey).removeCore
   private val soc = Module(new LNTop)
 
+  // DSE signals
+  val dse_rst = IO(Input(AsyncReset()))
+  val dse_epoch = IO(Output(UInt(64.W)))
+  val dse_maxEpoch = IO(Output(UInt(64.W)))
+
   private val mmioXbar = if(doBlockTest) Module(new SimNto1Bridge(soc.cfgIO.map(_.params))) else Module(new StMmioBridge(soc.cfgIO.map(_.params)))
   mmioXbar.io.upstream.zip(soc.cfgIO).foreach({case(a, b) => a <> b})
   private val intCfgPort = if(doBlockTest) None else Some(mmioXbar.io.downstream.head)
@@ -155,6 +160,9 @@ class SimTop(implicit val p: Parameters) extends Module with NocIOHelper {
   soc.io.dft := DontCare
   soc.io.ramctl := DontCare
   soc.io.dft.lgc_rst_n := true.B
+  soc.io.dse_rst := dse_rst.asAsyncReset
+  dse_epoch := soc.io.dse_epoch
+  dse_maxEpoch := soc.io.dse_maxEpoch
   soc.io.default_reset_vector := 0x10000000L.U
   soc.io.ci := 0.U
   soc.io.default_cpu_enable.foreach(_ := false.B)

@@ -17,3 +17,4 @@ sim
 debug
 release_*
 *.jar
+.bsp/mill-bsp.json
