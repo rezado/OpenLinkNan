@@ -23,6 +23,7 @@ import xs.utils.perf.{DebugOptionsKey, LogUtilsOptionsKey, PerfCounterOptionsKey
 import xs.utils.sram.SramCtrlBundle
 import zhujiang.axi.AxiUtils
 import zhujiang.{NocIOHelper, ZJParametersKey, ZJRawModule}
+import chisel3.util.experimental.BoringUtils
 
 
 object GlobalStaticParameters {
@@ -60,6 +61,7 @@ class LNTop(implicit p:Parameters) extends ZJRawModule with NocIOHelper {
       case HardwareAssertionKey => p(HardwareAssertionKey)
       case ZJParametersKey => p(ZJParametersKey)
       case LinkNanParamsKey => GlobalStaticParameters.lnParams
+      case XSCoreParamsKey => GlobalStaticParameters.xsParams
       case DebugOptionsKey => p(DebugOptionsKey)
       case MonitorsEnabled => false
       case LogUtilsOptionsKey => p(LogUtilsOptionsKey)
@@ -82,6 +84,9 @@ class LNTop(implicit p:Parameters) extends ZJRawModule with NocIOHelper {
     val jtag = uncore.io.jtag.map(t => chiselTypeOf(t))
     val dft = new LnDftWires
     val ramctl = Input(new SramCtrlBundle)
+    val dse_rst = Input(AsyncReset())
+    val dse_epoch = Output(UInt(64.W))
+    val dse_maxEpoch = Output(UInt(64.W))
   })
 
   val ddrDrv = uncore.ddrIO.map(AxiUtils.getIntnl)
@@ -92,19 +97,34 @@ class LNTop(implicit p:Parameters) extends ZJRawModule with NocIOHelper {
   runIOAutomation()
   dontTouch(io)
 
-  uncore.io.reset := io.reset
+  // DSE Reset Controller
+  private val dseResetCtrl = Module(new DSEResetController())
+
+  dseResetCtrl.io.clock := io.noc_clock
+  dseResetCtrl.io.reset := io.dse_rst
+  dseResetCtrl.io.ctrlSel := uncore.io.dse_ctrlSel
+  dseResetCtrl.io.max_instr_cnt := uncore.io.dse_maxInstrCnt
+
+  val instrCnt_sink = Wire(UInt(64.W))
+  BoringUtils.addSink(instrCnt_sink, "DSE_INSTRCNT")
+  dseResetCtrl.io.instrCnt := instrCnt_sink
+
+  uncore.io.reset := (io.reset.asBool || dseResetCtrl.io.reset_valid).asAsyncReset
   uncore.io.noc_clock := io.noc_clock
   uncore.io.dev_clock := io.dev_clock
   uncore.io.rtc_clock := io.rtc_clock
   uncore.io.ext_intr := io.ext_intr
   uncore.io.ci := io.ci
-  uncore.io.default_reset_vector := io.default_reset_vector
+  uncore.io.default_reset_vector := Mux(dseResetCtrl.io.reset_valid, dseResetCtrl.io.reset_vector, io.default_reset_vector)
   uncore.io.default_cpu_enable := io.default_cpu_enable
   uncore.io.jtag.foreach(_ <> io.jtag.get)
   uncore.io.dft <> io.dft
   io.ndreset := uncore.io.ndreset
   uncore.io.cluster_clocks := io.cluster_clocks
   uncore.io.ramctl := io.ramctl
+  uncore.io.dse_rst := io.dse_rst
+  io.dse_epoch := uncore.io.dse_epoch
+  io.dse_maxEpoch := uncore.io.dse_maxEpoch
 
   private val clusterP = new Config((_,_,_) => {
     case HardwareAssertionKey => p(HardwareAssertionKey)

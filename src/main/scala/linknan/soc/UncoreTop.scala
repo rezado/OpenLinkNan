@@ -6,6 +6,7 @@ import linknan.cluster.hub.interconnect.ClusterIcnBundle
 import linknan.soc.device.DevicesWrapper
 import linknan.utils.{BitSynchronizer, ClkDiv2}
 import org.chipsalliance.cde.config.Parameters
+import xiangshan.XSCoreParamsKey
 import xs.utils.ResetGen
 import xs.utils.sram.SramCtrlBundle
 import zhujiang._
@@ -78,6 +79,11 @@ class UncoreTop(implicit p:Parameters) extends ZJRawModule with NocIOHelper
     val jtag = devWrp.io.debug.systemjtag.map(t => chiselTypeOf(t))
     val dft = new LnDftWires
     val ramctl = Input(new SramCtrlBundle)
+    val dse_rst = Input(Reset())
+    val dse_ctrlSel = Output(UInt(8.W))
+    val dse_maxInstrCnt = Output(UInt(64.W))
+    val dse_epoch = Output(UInt(64.W))
+    val dse_maxEpoch = Output(UInt(64.W))
   })
   val cluster = noc.ccnIO.map(ccn => IO(new ClusterIcnBundle(ccn.node)))
 
@@ -101,6 +107,11 @@ class UncoreTop(implicit p:Parameters) extends ZJRawModule with NocIOHelper
   devWrp.sys_clk := io.noc_clock
   devWrp.dev_clk := io.dev_clock
   devWrp.reset := implicitReset
+  devWrp.io.dse_rst := io.dse_rst
+  io.dse_ctrlSel := devWrp.io.dse_ctrlSel
+  io.dse_maxInstrCnt := devWrp.io.dse_maxInstrCnt
+  io.dse_epoch := devWrp.io.dse_epoch
+  io.dse_maxEpoch := devWrp.io.dse_maxEpoch
   io.ndreset := devWrp.io.debug.ndreset
   noc.io.ci := io.ci
   noc.io.dft.from(io.dft)
