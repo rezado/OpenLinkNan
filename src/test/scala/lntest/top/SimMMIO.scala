@@ -42,12 +42,14 @@ class SimMMIO(cfgParams: AxiParams, dmaParams: AxiParams)(implicit p: config.Par
   private val flash = LazyModule(new AXI4Flash(Seq(AddressSet(0x10000000L, 0xfffffff))))
   private val uart = LazyModule(new AXI4UART(Seq(AddressSet(0x40600000L, 0xf))))
   private val intrGen = LazyModule(new AXI4IntrGenerator(Seq(AddressSet(0x40070000L, 0x0000ffffL)), p(LinkNanParamsKey).nrExtIntr))
+  private val uparam = LazyModule(new AXI4UParam(Seq(AddressSet(0x31310000L, 0xffff))))
 
   private val axiBus = AXI4Xbar()
 
   uart.node := axiBus
   flash.node := axiBus
   intrGen.node := axiBus
+  uparam.node := axiBus
   axiBus := node
 
   lazy val module = new Impl

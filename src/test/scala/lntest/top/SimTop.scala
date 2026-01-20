@@ -35,7 +35,7 @@ import org.chipsalliance.diplomacy.DisableMonitors
 import xiangshan.XSCoreParamsKey
 import xijiang.NodeType
 import xijiang.tfb.TrafficBoardFileManager
-import xs.utils.perf.{DebugOptionsKey, LogPerfHelper}
+import xs.utils.perf.{DebugOptionsKey, LogPerfHelper, HardenXSPerfAccumulate}
 import xs.utils.stage.XsStage
 import zhujiang.{NocIOHelper, ZJParametersKey}
 import zhujiang.axi.{AxiBundle, AxiParams, AxiUtils, BaseAxiXbar, ExtAxiBundle}
@@ -211,6 +211,9 @@ class SimTop(implicit val p: Parameters) extends Module with NocIOHelper {
 
   DeviceTreeGenerator.simGenerate
   lntest.info.InfoGen.register(soc)
+
+  lazy val io_perf = HardenXSPerfAccumulate.reclaim()
+  dontTouch(io_perf)
 }
 
 object SimGenerator extends App {

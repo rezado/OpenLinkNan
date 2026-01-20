@@ -35,6 +35,8 @@ function emu_comp(num_cores)
     local difftest_csrc_common = path.join(difftest_csrc, "common")
     local difftest_csrc_difftest = path.join(difftest_csrc, "difftest")
     local difftest_csrc_spikedasm = path.join(difftest_csrc, "plugin", "spikedasm")
+    local difftest_csrc_dse = path.join(difftest_csrc, "plugin", "dse")
+    local difftest_csrc_plugin_include = path.join(difftest_csrc, "plugin", "include")
     local difftest_csrc_verilator = path.join(difftest_csrc, "verilator")
     local difftest_config = path.join(difftest, "config")
 
@@ -72,13 +74,16 @@ function emu_comp(num_cores)
     table.join2(vsrc, os.files(path.join(difftest_vsrc_st, "*v")))
 
     local csrc = os.files(path.join(design_gen_dir, "*.cpp"))
+    table.join2(csrc, os.files(path.join(build_dir, "*.HardenPerf.cpp")))
     table.join2(csrc, os.files(path.join(difftest_csrc_common, "*.cpp")))
     table.join2(csrc, os.files(path.join(difftest_csrc_spikedasm, "*.cpp")))
+    table.join2(csrc, os.files(path.join(difftest_csrc_dse, "*.cpp")))
     table.join2(csrc, os.files(path.join(difftest_csrc_verilator, "*.cpp")))
 
     local headers = os.files(path.join(design_gen_dir, "*.h"))
     table.join2(headers, os.files(path.join(difftest_csrc_common, "*.h")))
     table.join2(headers, os.files(path.join(difftest_csrc_spikedasm, "*.h")))
+    table.join2(headers, os.files(path.join(difftest_csrc_dse, "*.h")))
     table.join2(headers, os.files(path.join(difftest_csrc_verilator, "*.h")))
 
     if not option.get("no_diff") then
@@ -105,10 +110,13 @@ function emu_comp(num_cores)
     local cxx_flags = "-std=c++17 -DVERILATOR -DNUM_CORES=" .. num_cores
     local cxx_ldflags = "-ldl -lrt -lpthread -lsqlite3 -lz -lzstd"
     cxx_flags = cxx_flags .. " -I" .. difftest_config
+    cxx_flags = cxx_flags .. " -I" .. build_dir
     cxx_flags = cxx_flags .. " -I" .. design_gen_dir
     cxx_flags = cxx_flags .. " -I" .. difftest_csrc_common
     cxx_flags = cxx_flags .. " -I" .. difftest_csrc_difftest
     cxx_flags = cxx_flags .. " -I" .. difftest_csrc_spikedasm
+    cxx_flags = cxx_flags .. " -I" .. difftest_csrc_dse
+    cxx_flags = cxx_flags .. " -I" .. difftest_csrc_plugin_include
     cxx_flags = cxx_flags .. " -I" .. difftest_csrc_verilator
     cxx_flags = cxx_flags .. " -DNOOP_HOME=\\\\\\\"" .. abs_base .. "\\\\\\\""
     if option.get("ref") == "Spike" then
