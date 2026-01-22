@@ -108,7 +108,7 @@ function emu_comp(num_cores)
     io.writefile(csrc_filelist_path, csrc_filelist_contents)
 
     local cxx_flags = "-std=c++17 -DVERILATOR -DNUM_CORES=" .. num_cores
-    local cxx_ldflags = "-ldl -lrt -lpthread -lsqlite3 -lz -lzstd"
+    local cxx_ldflags = "-ldl -lrt -lpthread -lsqlite3 -lz -lzstd -lboost_filesystem -lboost_system"
     cxx_flags = cxx_flags .. " -I" .. difftest_config
     cxx_flags = cxx_flags .. " -I" .. build_dir
     cxx_flags = cxx_flags .. " -I" .. design_gen_dir

@@ -44,7 +44,7 @@ class TLDeviceBlockInner(coreNum: Int, extIntrNum: Int)(implicit p: Parameters) 
   private val xbar = LazyModule(new TLXbar)
   private val plic = LazyModule(new TLPLIC(PLICParams(baseAddress = p(LinkNanParamsKey).plicBase), 8))
   private val debug = LazyModule(new DebugModule(coreNum))
-  private val dseCtrl = LazyModule(new DSECtrlUnit(DSEParams()))
+  private val dseCtrl = LazyModule(new DSECtrlUnit(DSEParams(baseAddress = p(LinkNanParamsKey).dseCtrlBase)))
 
   private val intSourceNode = IntSourceNode(IntSourcePortSimple(extIntrNum, ports = 1, sources = 1))
   private val debugIntSink = IntSinkNode(IntSinkPortSimple(coreNum, 1))

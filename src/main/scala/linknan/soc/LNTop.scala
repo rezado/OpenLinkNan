@@ -24,6 +24,7 @@ import xs.utils.sram.SramCtrlBundle
 import zhujiang.axi.AxiUtils
 import zhujiang.{NocIOHelper, ZJParametersKey, ZJRawModule}
 import chisel3.util.experimental.BoringUtils
+import xs.utils.RegNextN
 
 
 object GlobalStaticParameters {
@@ -85,8 +86,11 @@ class LNTop(implicit p:Parameters) extends ZJRawModule with NocIOHelper {
     val dft = new LnDftWires
     val ramctl = Input(new SramCtrlBundle)
     val dse_rst = Input(AsyncReset())
+    val dse_reset_valid = Output(Bool())
+    val dse_reset_vector = Output(UInt(raw.W))
     val dse_epoch = Output(UInt(64.W))
     val dse_maxEpoch = Output(UInt(64.W))
+    val enable_collect_perf = Output(Bool())
   })
 
   val ddrDrv = uncore.ddrIO.map(AxiUtils.getIntnl)
@@ -115,7 +119,9 @@ class LNTop(implicit p:Parameters) extends ZJRawModule with NocIOHelper {
   uncore.io.rtc_clock := io.rtc_clock
   uncore.io.ext_intr := io.ext_intr
   uncore.io.ci := io.ci
-  uncore.io.default_reset_vector := Mux(dseResetCtrl.io.reset_valid, dseResetCtrl.io.reset_vector, io.default_reset_vector)
+  withClock(io.noc_clock) {
+    uncore.io.default_reset_vector := RegNextN(Mux(dseResetCtrl.io.reset_valid, dseResetCtrl.io.reset_vector, io.default_reset_vector), 50)
+  }
   uncore.io.default_cpu_enable := io.default_cpu_enable
   uncore.io.jtag.foreach(_ <> io.jtag.get)
   uncore.io.dft <> io.dft
@@ -125,6 +131,9 @@ class LNTop(implicit p:Parameters) extends ZJRawModule with NocIOHelper {
   uncore.io.dse_rst := io.dse_rst
   io.dse_epoch := uncore.io.dse_epoch
   io.dse_maxEpoch := uncore.io.dse_maxEpoch
+  io.dse_reset_valid := dseResetCtrl.io.reset_valid
+  io.dse_reset_vector := dseResetCtrl.io.reset_vector
+  io.enable_collect_perf := dseResetCtrl.io.enable_collect_perf
 
   private val clusterP = new Config((_,_,_) => {
     case HardwareAssertionKey => p(HardwareAssertionKey)

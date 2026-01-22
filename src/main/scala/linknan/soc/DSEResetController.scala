@@ -22,6 +22,7 @@ class DSEResetController(implicit p: Parameters) extends ZJRawModule with Implic
         val max_instr_cnt = Input(UInt(64.W))
         val reset_valid = Output(Bool())
         val reset_vector = Output(UInt(raw.W))
+        val enable_collect_perf = Output(Bool())
     })
 
     val commit_valid = WireInit(false.B)
@@ -46,13 +47,14 @@ class DSEResetController(implicit p: Parameters) extends ZJRawModule with Implic
       }
 
       val reset_avoid = RegInit(false.B)
-      val (reset_avoid_counter, reset_avoid_end) = Counter(coreResetReg, 10)
+      val (reset_avoid_counter, reset_avoid_end) = Counter(coreResetReg, 256)
       when (reset_avoid_end) {
         reset_avoid := false.B
       }
 
       // workload -> driver reset
       val reach_instr_limit = (io.instrCnt >= io.max_instr_cnt) && (resetVectorReg === 0x80000000L.U) && !reset_avoid
+      io.enable_collect_perf := (io.instrCnt >= io.max_instr_cnt - 10.U) && (resetVectorReg === 0x80000000L.U) && !reset_avoid
 
       when (ctrlSelReset) {
         coreResetReg := true.B
@@ -67,7 +69,7 @@ class DSEResetController(implicit p: Parameters) extends ZJRawModule with Implic
       }
 
       // core reset counter
-      val (core_rst_counter, core_rst_end) = Counter(coreResetReg, 10)
+      val (core_rst_counter, core_rst_end) = Counter(coreResetReg, 256)
       when (core_rst_end) {
         coreResetReg := false.B
       }

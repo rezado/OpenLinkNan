@@ -76,6 +76,9 @@ class SimTop(implicit val p: Parameters) extends Module with NocIOHelper {
   val dse_rst = IO(Input(AsyncReset()))
   val dse_epoch = IO(Output(UInt(64.W)))
   val dse_maxEpoch = IO(Output(UInt(64.W)))
+  val dse_reset_valid = IO(Output(Bool()))
+  val dse_reset_vector = IO(Output(UInt(64.W)))
+  val enable_collect_perf = IO(Output(Bool()))
 
   private val mmioXbar = if(doBlockTest) Module(new SimNto1Bridge(soc.cfgIO.map(_.params))) else Module(new StMmioBridge(soc.cfgIO.map(_.params)))
   mmioXbar.io.upstream.zip(soc.cfgIO).foreach({case(a, b) => a <> b})
@@ -161,8 +164,11 @@ class SimTop(implicit val p: Parameters) extends Module with NocIOHelper {
   soc.io.ramctl := DontCare
   soc.io.dft.lgc_rst_n := true.B
   soc.io.dse_rst := dse_rst.asAsyncReset
+  dse_reset_valid := soc.io.dse_reset_valid
+  dse_reset_vector := soc.io.dse_reset_vector
   dse_epoch := soc.io.dse_epoch
   dse_maxEpoch := soc.io.dse_maxEpoch
+  enable_collect_perf := soc.io.enable_collect_perf
   soc.io.default_reset_vector := 0x10000000L.U
   soc.io.ci := 0.U
   soc.io.default_cpu_enable.foreach(_ := false.B)

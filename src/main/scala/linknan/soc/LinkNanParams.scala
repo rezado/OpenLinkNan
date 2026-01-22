@@ -30,6 +30,7 @@ case class LinkNanParams(
   imsicMBase: Long = 0x0080_0000L,
   debugBase: Long = 0x0800_0000L,
   plicBase: Long = 0x0400_0000L,
+  dseCtrlBase: Long = 0x3900_2000L,
   mswiBase: Long = 0x0100_0000L,
   sswiBase: Long = 0x0100_4000L,
   refTimerBase: Long = 0x0100_8000L,
@@ -77,6 +78,7 @@ case class LinkNanParams(
     coreDevAddrSets.reduce(_ ++ _) ++ Seq(
       (plicBase, 0x400_0000),
       (debugBase, 0x1000),
+      (dseCtrlBase, 0x0fff),
       (0x1000_0000L, 0x1000_0000),
       (0x4060_0000L, 0x10),
       (0x4007_0000L, 0x1_0000),
