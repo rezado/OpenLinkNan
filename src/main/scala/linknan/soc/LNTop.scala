@@ -2,7 +2,7 @@ package linknan.soc
 
 import chisel3._
 import chisel3.experimental.hierarchy.{Definition, Instance}
-import chisel3.util.{log2Ceil, log2Up}
+import chisel3.util.{Cat, log2Ceil, log2Up}
 import coupledL2.tl2chi.{CHIAddrWidthKey, CHIIssue, DecoupledCHI, Issue}
 import difftest.DifftestModule
 import difftest.gateway.Gateway
@@ -19,7 +19,7 @@ import xs.utils.cache.common.{BankBitsKey, L2ParamKey}
 import xs.utils.cache.{EnableCHI, L1Param, L2Param}
 import xs.utils.debug.HardwareAssertionKey
 import xs.utils.dft.{BaseTestBundle, PowerDomainTestBundle}
-import xs.utils.perf.{DebugOptionsKey, LogUtilsOptionsKey, PerfCounterOptionsKey}
+import xs.utils.perf.{DebugOptionsKey, IOPerfOutput, LogUtilsOptionsKey, PerfCounterOptionsKey, PerfEventBundle, HardenXSPerfAccumulate}
 import xs.utils.sram.SramCtrlBundle
 import zhujiang.axi.AxiUtils
 import zhujiang.{NocIOHelper, ZJParametersKey, ZJRawModule}
@@ -174,6 +174,13 @@ class LNTop(implicit p:Parameters) extends ZJRawModule with NocIOHelper {
     }
   }
   linknan.devicetree.DeviceTreeGenerator.lnGenerate(clusterP)
+
+  lazy val (io_perf, nr_perf) = HardenXSPerfAccumulate.reclaim()
+  val perf_out = IO(Output(new IOPerfOutput(nr_perf * (new PerfEventBundle).getWidth)))
+  withClock(io.noc_clock) {
+      perf_out.data := Cat(io_perf.asUInt)
+  }
+  dontTouch(perf_out)
 
   private val gateways = Option.when(Gateway.needEndpoint)(uncore.cluster.indices.map(idx => Module(new DifftestCoreGateWayCollector(idx, s"${xs.utils.GlobalData.prefix}LNTop"))))
   gateways.foreach(_.zipWithIndex.foreach({case(g, i) =>

@@ -85,6 +85,15 @@ class FpgaTop(implicit p: Parameters) extends ZJRawModule with NocIOHelper with 
       val jtag = Flipped(new JTAGIO(hasTRSTn = false))
       val reset = Input(AsyncReset())
     })
+    // DSE signals
+    val dse_rst = Input(AsyncReset())
+    val dse_epoch = Output(UInt(64.W))
+    val dse_maxEpoch = Output(UInt(64.W))
+    val dse_reset_valid = Output(Bool())
+    val dse_reset_vector = Output(UInt(raw.W))
+    val enable_collect_perf = Output(Bool())
+    // Performance output
+    val perf_out = soc.perf_out.cloneType
   })
   private val _reset = (!io.aresetn).asAsyncReset
   private val resetSync = withClockAndReset(io.aclk, _reset) { ResetGen(2, None) }
@@ -126,6 +135,17 @@ class FpgaTop(implicit p: Parameters) extends ZJRawModule with NocIOHelper with 
   })
   io.systemjtag.foreach(_.jtag <> soc.io.jtag.get.jtag)
   soc.dmaIO.foreach(_ := DontCare)
+
+  // DSE signal connections
+  soc.io.dse_rst := io.dse_rst
+  io.dse_reset_valid := soc.io.dse_reset_valid
+  io.dse_reset_vector := soc.io.dse_reset_vector
+  io.dse_epoch := soc.io.dse_epoch
+  io.dse_maxEpoch := soc.io.dse_maxEpoch
+  io.enable_collect_perf := soc.io.enable_collect_perf
+
+  // Performance output connection
+  io.perf_out := soc.perf_out
 
   val ddrDrv = Seq(ddrBuf.io.out) ++ pcieMst.map(AxiUtils.getIntnl)
   val cfgDrv = soc.cfgIO.map(AxiUtils.getIntnl)
