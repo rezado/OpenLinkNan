@@ -2,6 +2,7 @@ package lntest.top
 
 import chisel3.stage.ChiselGeneratorAnnotation
 import chisel3.util.HasBlackBoxInline
+import chisel3.util.experimental.BoringUtils
 import chisel3.{BlackBox, _}
 import freechips.rocketchip.jtag.JTAGIO
 import linknan.generator.{AddrConfig, Generator}
@@ -11,6 +12,7 @@ import org.chipsalliance.diplomacy.DisableMonitors
 import xs.utils.perf.DebugOptionsKey
 import xs.utils.stage.XsStage
 import xs.utils.{FileRegisters, ResetGen}
+import zhujiang.{ZJParametersKey, ZJRawModule}
 import zhujiang.axi.{AxiBufferChain, AxiBundle, AxiUtils}
 import zhujiang.{NocIOHelper, ZJRawModule}
 
@@ -73,6 +75,7 @@ object VerilogAddrRemapper {
 class FpgaTop(implicit p: Parameters) extends ZJRawModule with NocIOHelper with ImplicitClock with ImplicitReset {
   override val desiredName = "XlnFpgaTop"
   private val soc = Module(new LNTop)
+
   val io = IO(new Bundle {
     val aresetn = Input(Bool())
     val aclk = Input(Clock())
@@ -94,6 +97,13 @@ class FpgaTop(implicit p: Parameters) extends ZJRawModule with NocIOHelper with 
     val enable_collect_perf = Output(Bool())
     // Performance output
     val perf_out = soc.perf_out.cloneType
+    // Debug signals from BoringUtils (single core)
+    val debug_default_reset_vector = Output(UInt(raw.W))
+    val debug_cpu_boot_ctrl_reset = Output(Bool())
+    val debug_cpu_boot_addr = Output(UInt(64.W))
+    val debug_default_boot_addr = Output(UInt(64.W))
+    val debug_core_reset_vector = Output(UInt(raw.W))
+    val debug_core_reset = Output(Bool())
   })
   private val _reset = (!io.aresetn).asAsyncReset
   private val resetSync = withClockAndReset(io.aclk, _reset) { ResetGen(2, None) }
@@ -146,6 +156,31 @@ class FpgaTop(implicit p: Parameters) extends ZJRawModule with NocIOHelper with 
 
   // Performance output connection
   io.perf_out := soc.perf_out
+
+  // Sink BoringUtils signals for debugging (single core)
+  val default_reset_vector_sink = WireInit(0.U(raw.W))
+  BoringUtils.addSink(default_reset_vector_sink, "FPGA_DEFAULT_RESET_VECTOR")
+  io.debug_default_reset_vector := default_reset_vector_sink
+
+  val cpu_boot_ctrl_reset_sink = WireInit(false.B)
+  BoringUtils.addSink(cpu_boot_ctrl_reset_sink, "FPGA_CPU_BOOT_CTRL_RESET")
+  io.debug_cpu_boot_ctrl_reset := cpu_boot_ctrl_reset_sink
+
+  val cpu_boot_addr_sink = WireInit(0.U(64.W))
+  BoringUtils.addSink(cpu_boot_addr_sink, "FPGA_CPU_BOOT_ADDR")
+  io.debug_cpu_boot_addr := cpu_boot_addr_sink
+
+  val default_boot_addr_sink = WireInit(0.U(64.W))
+  BoringUtils.addSink(default_boot_addr_sink, "FPGA_DEFAULT_BOOT_ADDR")
+  io.debug_default_boot_addr := default_boot_addr_sink
+
+  val core_reset_vector_sink = WireInit(0.U(raw.W))
+  BoringUtils.addSink(core_reset_vector_sink, "FPGA_CORE_RESET_VECTOR")
+  io.debug_core_reset_vector := core_reset_vector_sink
+
+  val core_reset_sink = WireInit(false.B)
+  BoringUtils.addSink(core_reset_sink, "FPGA_CORE_RESET")
+  io.debug_core_reset := core_reset_sink
 
   val ddrDrv = Seq(ddrBuf.io.out) ++ pcieMst.map(AxiUtils.getIntnl)
   val cfgDrv = soc.cfgIO.map(AxiUtils.getIntnl)

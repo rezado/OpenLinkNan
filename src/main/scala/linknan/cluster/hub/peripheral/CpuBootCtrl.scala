@@ -4,6 +4,7 @@ import chisel3._
 import chisel3.util._
 import org.chipsalliance.cde.config.Parameters
 import zhujiang.tilelink.{BaseTLULPeripheral, TilelinkParams}
+import chisel3.util.experimental.BoringUtils
 
 class CpuBootCtrl(tlParams: TilelinkParams)(implicit p: Parameters) extends BaseTLULPeripheral(tlParams) {
   val io = IO(new Bundle {
@@ -25,4 +26,7 @@ class CpuBootCtrl(tlParams: TilelinkParams)(implicit p: Parameters) extends Base
     addrReg := addrWire
   }
   io.cpuBootAddr := addrReg
+
+  // Broadcast CpuBootCtrl reset state for FPGATop monitoring
+  BoringUtils.addSource(resetReg, "FPGA_CPU_BOOT_CTRL_RESET")
 }

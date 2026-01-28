@@ -120,7 +120,10 @@ class LNTop(implicit p:Parameters) extends ZJRawModule with NocIOHelper {
   uncore.io.ext_intr := io.ext_intr
   uncore.io.ci := io.ci
   withClock(io.noc_clock) {
-    uncore.io.default_reset_vector := RegNextN(Mux(dseResetCtrl.io.reset_valid, dseResetCtrl.io.reset_vector, io.default_reset_vector), 50)
+    val reset_vector = RegNextN(Mux(dseResetCtrl.io.reset_valid, dseResetCtrl.io.reset_vector, io.default_reset_vector), 50)
+    uncore.io.default_reset_vector := reset_vector
+    // Broadcast default_reset_vector for FPGATop monitoring
+    BoringUtils.addSource(reset_vector, "FPGA_DEFAULT_RESET_VECTOR")
   }
   uncore.io.default_cpu_enable := io.default_cpu_enable
   uncore.io.jtag.foreach(_ <> io.jtag.get)

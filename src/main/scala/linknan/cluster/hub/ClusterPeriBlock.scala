@@ -3,6 +3,7 @@ package linknan.cluster.hub
 import aia.{CSRToIMSICBundle, IMSICParams, IMSICToCSRBundle, TLIMSIC}
 import chisel3._
 import chisel3.util._
+import chisel3.util.experimental.BoringUtils
 import freechips.rocketchip.diplomacy.IdRange
 import org.chipsalliance.diplomacy.lazymodule._
 import freechips.rocketchip.tilelink.{TLBuffer, TLClientNode, TLMasterParameters, TLMasterPortParameters}
@@ -149,7 +150,8 @@ class ClusterPeriBlock(tlParams: Seq[TilelinkParams], coreNum:Int)(implicit p:Pa
   io.tls.zip(periXBar.io.upstream).foreach {case(a, b) => a <> b}
 
   for(i <- 0 until coreNum) {
-    io.cpu(i).bootAddr := cpuBootCtlSeq(i)._2.io.cpuBootAddr
+    val bootAddr = cpuBootCtlSeq(i)._2.io.cpuBootAddr
+    io.cpu(i).bootAddr := bootAddr
     io.cpu(i).pchn <> cpuPwrCtlSeq(i)._2.io.pChnMst
     io.cpu(i).pcsm <> cpuPwrCtlSeq(i)._2.io.pcsmCtrl
     io.cpu(i).blockReq := RegNext(cpuPwrCtlSeq(i)._2.io.blockReq)
@@ -158,7 +160,13 @@ class ClusterPeriBlock(tlParams: Seq[TilelinkParams], coreNum:Int)(implicit p:Pa
     io.cpu(i).mtip := cpuDaclintSeq(i)._2.io.mtip
     io.cpu(i).timerUpdate := cpuDaclintSeq(i)._2.io.timerUpdate
     cpuDaclintSeq(i)._2.io.rtc := io.cluster.rtc
-    cpuBootCtlSeq(i)._2.io.defaultBootAddr := io.cpu(i).defaultBootAddr
+    val defaultBootAddr = io.cpu(i).defaultBootAddr
+    cpuBootCtlSeq(i)._2.io.defaultBootAddr := defaultBootAddr
+
+    // Broadcast CpuBootCtrl signals for FPGATop monitoring (single core)
+    BoringUtils.addSource(bootAddr, "FPGA_CPU_BOOT_ADDR")
+    BoringUtils.addSource(defaultBootAddr, "FPGA_DEFAULT_BOOT_ADDR")
+
     cpuPwrCtlSeq(i)._2.io.powerOnState := Mux(io.cpu(i).defaultEnable, PowerMode.ON, PowerMode.OFF)
     cpuPwrCtlSeq(i)._2.io.deactivate := false.B
   }

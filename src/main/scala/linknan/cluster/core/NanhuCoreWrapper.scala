@@ -23,6 +23,7 @@ import xs.utils.perf.PerfEvent
 import zhujiang.HasZJParams
 import zhujiang.chi.FlitHelper.{connIcn, hwaConn}
 import zhujiang.chi._
+import chisel3.util.experimental.BoringUtils
 
 class NanhuCoreWrapper(node:Node)(implicit p:Parameters) extends BaseCoreWrapper {
   //Core connections
@@ -80,7 +81,10 @@ class NanhuCoreWrapper(node:Node)(implicit p:Parameters) extends BaseCoreWrapper
     _l2.io.hartId := io.mhartid
     _core.io.msiInfo := DontCare
     _core.io.clintTime := Pipe(timerUpdate)
-    _core.io.reset_vector := io.reset_vector
+    val core_reset_vector = io.reset_vector
+    _core.io.reset_vector := core_reset_vector
+    // Broadcast core reset_vector for FPGATop monitoring (single core)
+    BoringUtils.addSource(core_reset_vector, "FPGA_CORE_RESET_VECTOR")
     _core.io.traceCoreInterface := DontCare
     _l2.io.pfCtrlFromCore := _core.io.l2PfCtrl
     _core.io.l2_hint := _l2.io.l2_hint
@@ -134,6 +138,10 @@ class NanhuCoreWrapper(node:Node)(implicit p:Parameters) extends BaseCoreWrapper
     _l2.io.ramctl := io.ramctl
 
     reset_state := (_core.io.resetInFrontend || implicitReset.asBool).asAsyncReset
+    // Broadcast core reset state for FPGATop monitoring (single core)
+    val core_reset = WireInit(false.B)
+    core_reset := _core.io.resetInFrontend || implicitReset.asBool
+    BoringUtils.addSource(core_reset, "FPGA_CORE_RESET")
 
     _l2.io.debugTopDown.robTrueCommit := _core.io.debugTopDown.robTrueCommit
     _l2.io.debugTopDown.robHeadPaddr := _core.io.debugTopDown.robHeadPaddr
