@@ -104,9 +104,9 @@ class DSECtrlUnitImp(wrapper: DSECtrlUnit)(implicit p: Parameters) extends LazyR
     val intPhyRegs1 = RegInit(IntPhyRegs.U(64.W))
     val intPhyRegs = Wire(UInt(64.W))
 //
-//    val fpPhyRegs0 = RegInit((NRPhyRegs - 32).U(64.W))
-//    val fpPhyRegs1 = RegInit((NRPhyRegs - 32).U(64.W))
-//    val fpPhyRegs = Wire(UInt(64.W))
+    val fpPhyRegs0 = RegInit((VfPhyRegs - VecLogicRegs - FpLogicRegs).U(64.W))
+    val fpPhyRegs1 = RegInit((VfPhyRegs - VecLogicRegs - FpLogicRegs).U(64.W))
+    val fpPhyRegs = Wire(UInt(64.W))
 //
 //    val rasSize0 = RegInit(RasSize.U(64.W))
 //    val rasSize1 = RegInit(RasSize.U(64.W))
@@ -161,8 +161,8 @@ class DSECtrlUnitImp(wrapper: DSECtrlUnit)(implicit p: Parameters) extends LazyR
 //      0x1B8 -> Seq(RegField(64, l3Sets1)),
       0x1C0 -> Seq(RegField(64, intPhyRegs0)),
       0x1C8 -> Seq(RegField(64, intPhyRegs1)),
-//      0x1D0 -> Seq(RegField(64, fpPhyRegs0)),
-//      0x1D8 -> Seq(RegField(64, fpPhyRegs1)),
+      0x1D0 -> Seq(RegField(64, fpPhyRegs0)),
+      0x1D8 -> Seq(RegField(64, fpPhyRegs1)),
 //      0x1E0 -> Seq(RegField(64, rasSize0)),
 //      0x1E8 -> Seq(RegField(64, rasSize1)),
 //      0x1F0 -> Seq(RegField(64, dcacheWays0)),
@@ -185,7 +185,7 @@ class DSECtrlUnitImp(wrapper: DSECtrlUnit)(implicit p: Parameters) extends LazyR
 //    l2Sets := Mux(ctrlSel.orR, l2Sets1, l2Sets0)
 //    l3Sets := Mux(ctrlSel.orR, l3Sets1, l3Sets0)
     intPhyRegs := Mux(appliedCtrlSel.orR, intPhyRegs1, intPhyRegs0)
-//    fpPhyRegs := Mux(ctrlSel.orR, fpPhyRegs1, fpPhyRegs0)
+    fpPhyRegs := Mux(appliedCtrlSel.orR, fpPhyRegs1, fpPhyRegs0)
 //    rasSize := Mux(ctrlSel.orR, rasSize1, rasSize0)
 //    dcacheWays := Mux(ctrlSel.orR, dcacheWays1, dcacheWays0)
 //    dcacheMSHRs := Mux(ctrlSel.orR, dcacheMSHRs1, dcacheMSHRs0)
@@ -204,7 +204,7 @@ class DSECtrlUnitImp(wrapper: DSECtrlUnit)(implicit p: Parameters) extends LazyR
 //    BoringUtils.addSource(l2Sets, "DSE_L2SETS")
 //    BoringUtils.addSource(l3Sets, "DSE_L3SETS")
     BoringUtils.addSource(intPhyRegs, "DSE_INTFLSIZE")
-//    BoringUtils.addSource(fpPhyRegs, "DSE_FPFLSIZE")
+    BoringUtils.addSource(fpPhyRegs, "DSE_FPFLSIZE")
 //    BoringUtils.addSource(rasSize, "DSE_RASSIZE")
 //    BoringUtils.addSource(dcacheWays, "DSE_DCACHEWAYS")
 //    BoringUtils.addSource(dcacheMSHRs, "DSE_DCACHEMSHRS")
@@ -226,7 +226,7 @@ class DSECtrlUnitImp(wrapper: DSECtrlUnit)(implicit p: Parameters) extends LazyR
 //    assert(l2Sets <= p(XSCoreParamsKey).L2CacheParamsOpt.map(_.sets).getOrElse(0).U, "DSE parameter must not exceed L2Sets")
 //    assert(l3Sets <= p(SoCParamsKey).L3CacheParamsOpt.map(_.sets).getOrElse(0).U, "DSE parameter must not exceed L3Sets")
     assert(intPhyRegs <= IntPhyRegs.U, "DSE parameter must not exceed IntPhyRegs")
-//    assert(fpPhyRegs <= (NRPhyRegs - 32).U, "DSE parameter must not exceed fpPhyRegs")
+    assert(fpPhyRegs <= (VfPhyRegs - VecLogicRegs - FpLogicRegs).U, "DSE parameter must not exceed FpFreeListSize")
 //    assert(rasSize <= RasSize.U, "DSE parameter must not exceed RasSize")
 //    assert(dcacheWays <= p(XSCoreParamsKey).dcacheParametersOpt.map(_.nWays).getOrElse(0).U, "DSE parameter must not exceed dcacheWays")
 //    assert(dcacheMSHRs <= p(XSCoreParamsKey).dcacheParametersOpt.map(_.nMissEntries).getOrElse(0).U, "DSE parameter must not exceed dcacheMSHRs")
