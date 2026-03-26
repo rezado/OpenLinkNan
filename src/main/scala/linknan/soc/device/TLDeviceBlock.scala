@@ -29,6 +29,7 @@ class TLDeviceBlockIO(coreNum: Int, extIntrNum: Int)(implicit p: Parameters) ext
   val resetCtrl = new ResetCtrlIO(coreNum)(p)
   val debug = new DebugIO()(p)
   val dse_rst = Input(Reset())
+  val dse_apply_cfg = Input(Bool())
   val dse_ctrlSel = Output(UInt(8.W))
   val dse_maxInstrCnt = Output(UInt(64.W))
   val dse_epoch = Output(UInt(64.W))
@@ -103,6 +104,7 @@ class TLDeviceBlockInner(coreNum: Int, extIntrNum: Int)(implicit p: Parameters) 
 
     dseCtrl.module.io.clk := clock
     dseCtrl.module.io.rst := io.dse_rst
+    dseCtrl.module.io.apply_cfg := io.dse_apply_cfg
     io.dse_ctrlSel := dseCtrl.module.io.ctrlSel
     io.dse_maxInstrCnt := dseCtrl.module.io.maxInstrCnt
     io.dse_epoch := dseCtrl.module.io.epoch
