@@ -106,6 +106,7 @@ class DevicesWrapper(cfgParams: AxiParams, dmaParams: AxiParams)(implicit p: Par
     val resetCtrl = pb.dev.resetCtrl.cloneType
     val dft = new BaseTestBundle
     val dse_rst = Input(Reset())
+    val dse_apply_cfg = Input(Bool())
     val dse_ctrlSel = Output(UInt(8.W))
     val dse_maxInstrCnt = Output(UInt(64.W))
     val dse_epoch = Output(UInt(64.W))
@@ -153,6 +154,7 @@ class DevicesWrapper(cfgParams: AxiParams, dmaParams: AxiParams)(implicit p: Par
   pb.dev.resetCtrl.hartIsInReset := io.resetCtrl.hartIsInReset
 
   pb.dev.dse_rst := io.dse_rst
+  pb.dev.dse_apply_cfg := io.dse_apply_cfg
   io.dse_ctrlSel := pb.dev.dse_ctrlSel
   io.dse_maxInstrCnt := pb.dev.dse_maxInstrCnt
   io.dse_epoch := pb.dev.dse_epoch

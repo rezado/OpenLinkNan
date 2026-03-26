@@ -129,6 +129,7 @@ class LNTop(implicit p:Parameters) extends ZJRawModule with NocIOHelper {
   uncore.io.cluster_clocks := io.cluster_clocks
   uncore.io.ramctl := io.ramctl
   uncore.io.dse_rst := io.dse_rst
+  uncore.io.dse_apply_cfg := dseResetCtrl.io.reset_valid
   io.dse_epoch := uncore.io.dse_epoch
   io.dse_maxEpoch := uncore.io.dse_maxEpoch
   io.dse_reset_valid := dseResetCtrl.io.reset_valid

@@ -80,6 +80,7 @@ class UncoreTop(implicit p:Parameters) extends ZJRawModule with NocIOHelper
     val dft = new LnDftWires
     val ramctl = Input(new SramCtrlBundle)
     val dse_rst = Input(Reset())
+    val dse_apply_cfg = Input(Bool())
     val dse_ctrlSel = Output(UInt(8.W))
     val dse_maxInstrCnt = Output(UInt(64.W))
     val dse_epoch = Output(UInt(64.W))
@@ -108,6 +109,7 @@ class UncoreTop(implicit p:Parameters) extends ZJRawModule with NocIOHelper
   devWrp.dev_clk := io.dev_clock
   devWrp.reset := implicitReset
   devWrp.io.dse_rst := io.dse_rst
+  devWrp.io.dse_apply_cfg := io.dse_apply_cfg
   io.dse_ctrlSel := devWrp.io.dse_ctrlSel
   io.dse_maxInstrCnt := devWrp.io.dse_maxInstrCnt
   io.dse_epoch := devWrp.io.dse_epoch
