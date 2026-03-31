@@ -3,6 +3,7 @@ package linknan.cluster.core
 import chisel3._
 import chisel3.experimental.hierarchy.instantiable
 import chisel3.util._
+import chisel3.util.experimental.BoringUtils
 import coupledL2.tl2chi.TL2CHICoupledL2
 import freechips.rocketchip.devices.debug.DebugModuleKey
 import freechips.rocketchip.interrupts.{IntSourceNode, IntSourcePortSimple}
@@ -132,6 +133,9 @@ class NanhuCoreWrapper(node:Node)(implicit p:Parameters) extends BaseCoreWrapper
     _l2.io.dft.func.foreach(_ := io.dft.toSramBroadCastBundle)
     _l2.io.dft.reset.foreach(_ := io.dft.toResetDftBundle)
     _l2.io.ramctl := io.ramctl
+    val pL2Sets = WireInit(0.U(64.W))
+    BoringUtils.addSink(pL2Sets, "DSE_L2SETS")
+    _l2.io.sets := pL2Sets
 
     reset_state := (_core.io.resetInFrontend || implicitReset.asBool).asAsyncReset
 
