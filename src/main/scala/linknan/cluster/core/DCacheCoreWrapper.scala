@@ -3,6 +3,7 @@ package linknan.cluster.core
 import chisel3._
 import chisel3.experimental.hierarchy.{instantiable, public}
 import chisel3.util._
+import chisel3.util.experimental.BoringUtils
 import coupledL2.tl2chi.TL2CHICoupledL2
 import freechips.rocketchip.diplomacy.{IdRange, TransferSizes}
 import freechips.rocketchip.tilelink.{BankBinder, TLBuffer, TLClientNode, TLMasterParameters, TLMasterPortParameters, TLXbar}
@@ -88,6 +89,9 @@ class DCacheCoreWrapper (node:Node)(implicit p:Parameters) extends BaseCoreWrapp
     l2cache.module.io.ramctl := io.ramctl
     l2cache.module.io.l2Flush.foreach(_ := false.B)
     l2cache.module.io_cpu_halt.foreach(_ := false.B)
+    val pL2Sets = WireInit(0.U(64.W))
+    BoringUtils.addSink(pL2Sets, "DSE_L2SETS")
+    l2cache.module.io.sets := pL2Sets
 
     tpMetaSinkNode.foreach(_.in.head._1.ready := false.B)
     tpMetaSourceNode.foreach(_.out.head._1 := DontCare)
