@@ -12,6 +12,7 @@ import xiangshan.backend.regfile.Regfile
 import chisel3.util.experimental.BoringUtils
 import xiangshan.{XSCoreParameters, XSCoreParamsKey, HasXSParameter}
 import xs.utils.cache.common.L2ParamKey
+import zhujiang.ZJParametersKey
 
 case class DSEParams(baseAddress: BigInt = 0x39002000L)
 {
@@ -46,6 +47,7 @@ class DSECtrlUnitImp(wrapper: DSECtrlUnit)(implicit p: Parameters) extends LazyR
   childReset := io.rst
   val ctrlnode = wrapper.ctrlnode
   withClockAndReset(childClock, childReset) {
+    val staticL3Sets = p(ZJParametersKey).cacheSizeInB / 64 / p(ZJParametersKey).cacheWays
     val pingpong = RegInit(0.U(8.W))
     val ctrlSel = RegInit(0.U(8.W))
     val appliedCtrlSel = RegInit(0.U(8.W))
@@ -96,11 +98,11 @@ class DSECtrlUnitImp(wrapper: DSECtrlUnit)(implicit p: Parameters) extends LazyR
     val l2Sets0 = RegInit(p(L2ParamKey).sets.U(64.W))
     val l2Sets1 = RegInit(p(L2ParamKey).sets.U(64.W))
     val l2Sets = Wire(UInt(64.W))
-//
-//    val l3Sets0 = RegInit(p(SoCParamsKey).L3CacheParamsOpt.map(_.sets).getOrElse(0).U(64.W))
-//    val l3Sets1 = RegInit(p(SoCParamsKey).L3CacheParamsOpt.map(_.sets).getOrElse(0).U(64.W))
-//    val l3Sets = Wire(UInt(64.W))
-//
+
+    val l3Sets0 = RegInit(staticL3Sets.U(64.W))
+    val l3Sets1 = RegInit(staticL3Sets.U(64.W))
+    val l3Sets = Wire(UInt(64.W))
+
     val intPhyRegs0 = RegInit(IntPhyRegs.U(64.W))
     val intPhyRegs1 = RegInit(IntPhyRegs.U(64.W))
     val intPhyRegs = Wire(UInt(64.W))
@@ -158,8 +160,8 @@ class DSECtrlUnitImp(wrapper: DSECtrlUnit)(implicit p: Parameters) extends LazyR
 //      0x198 -> Seq(RegField(64, l3MSHRs1)),
       0x1A0 -> Seq(RegField(64, l2Sets0)),
       0x1A8 -> Seq(RegField(64, l2Sets1)),
-//      0x1B0 -> Seq(RegField(64, l3Sets0)),
-//      0x1B8 -> Seq(RegField(64, l3Sets1)),
+      0x1B0 -> Seq(RegField(64, l3Sets0)),
+      0x1B8 -> Seq(RegField(64, l3Sets1)),
       0x1C0 -> Seq(RegField(64, intPhyRegs0)),
       0x1C8 -> Seq(RegField(64, intPhyRegs1)),
       0x1D0 -> Seq(RegField(64, fpPhyRegs0)),
@@ -184,7 +186,7 @@ class DSECtrlUnitImp(wrapper: DSECtrlUnit)(implicit p: Parameters) extends LazyR
 //    l2MSHRs := Mux(ctrlSel.orR, l2MSHRs1, l2MSHRs0)
 //    l3MSHRs := Mux(ctrlSel.orR, l3MSHRs1, l3MSHRs0)
     l2Sets := Mux(appliedCtrlSel.orR, l2Sets1, l2Sets0)
-//    l3Sets := Mux(ctrlSel.orR, l3Sets1, l3Sets0)
+    l3Sets := Mux(appliedCtrlSel.orR, l3Sets1, l3Sets0)
     intPhyRegs := Mux(appliedCtrlSel.orR, intPhyRegs1, intPhyRegs0)
     fpPhyRegs := Mux(appliedCtrlSel.orR, fpPhyRegs1, fpPhyRegs0)
 //    rasSize := Mux(ctrlSel.orR, rasSize1, rasSize0)
@@ -203,7 +205,7 @@ class DSECtrlUnitImp(wrapper: DSECtrlUnit)(implicit p: Parameters) extends LazyR
 //    BoringUtils.addSource(l2MSHRs, "DSE_L2MSHRS")
 //    BoringUtils.addSource(l3MSHRs, "DSE_L3MSHRS")
     BoringUtils.addSource(l2Sets, "DSE_L2SETS")
-//    BoringUtils.addSource(l3Sets, "DSE_L3SETS")
+    BoringUtils.addSource(l3Sets, "DSE_L3SETS")
     BoringUtils.addSource(intPhyRegs, "DSE_INTFLSIZE")
     BoringUtils.addSource(fpPhyRegs, "DSE_FPFLSIZE")
 //    BoringUtils.addSource(rasSize, "DSE_RASSIZE")
@@ -225,7 +227,10 @@ class DSECtrlUnitImp(wrapper: DSECtrlUnit)(implicit p: Parameters) extends LazyR
 //    assert(l2MSHRs <= L2MSHRs.U, "DSE parameter must not exceed L2MSHRs")
 //    assert(l3MSHRs <= L3MSHRs.U, "DSE parameter must not exceed L3MSHRs")
     assert(l2Sets <= p(L2ParamKey).sets.U, "DSE parameter must not exceed L2Sets")
-//    assert(l3Sets <= p(SoCParamsKey).L3CacheParamsOpt.map(_.sets).getOrElse(0).U, "DSE parameter must not exceed L3Sets")
+    assert(l3Sets <= staticL3Sets.U, "DSE parameter must not exceed L3Sets")
+    assert(PopCount(l3Sets) === 1.U, "DSE L3Sets must be power-of-two")
+    assert(l3Sets >= p(ZJParametersKey).djParams.nrDirBank.U, "DSE L3Sets must cover all LLC dir banks")
+    assert((l3Sets % p(ZJParametersKey).djParams.nrDirBank.U) === 0.U, "DSE L3Sets must divide evenly across LLC dir banks")
     assert(intPhyRegs <= IntPhyRegs.U, "DSE parameter must not exceed IntPhyRegs")
     assert(fpPhyRegs <= (VfPhyRegs - VecLogicRegs - FpLogicRegs).U, "DSE parameter must not exceed FpFreeListSize")
 //    assert(rasSize <= RasSize.U, "DSE parameter must not exceed RasSize")
