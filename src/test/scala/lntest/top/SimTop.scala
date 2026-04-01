@@ -218,7 +218,7 @@ class SimTop(implicit val p: Parameters) extends Module with NocIOHelper {
   DeviceTreeGenerator.simGenerate
   lntest.info.InfoGen.register(soc)
 
-  lazy val io_perf = HardenXSPerfAccumulate.reclaim()
+  lazy val (io_perf, nr_perf) = HardenXSPerfAccumulate.reclaim()
   dontTouch(io_perf)
 }
 
