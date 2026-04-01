@@ -19,7 +19,7 @@ import xs.utils.cache.common.{BankBitsKey, L2ParamKey}
 import xs.utils.cache.{EnableCHI, L1Param, L2Param}
 import xs.utils.debug.HardwareAssertionKey
 import xs.utils.dft.{BaseTestBundle, PowerDomainTestBundle}
-import xs.utils.perf.{DebugOptionsKey, IOPerfOutput, LogUtilsOptionsKey, PerfCounterOptionsKey, PerfEventBundle, HardenXSPerfAccumulate}
+import xs.utils.perf.{DebugOptionsKey, LogUtilsOptionsKey, PerfCounterOptionsKey, PerfEventBundle, HardenXSPerfAccumulate}
 import xs.utils.sram.SramCtrlBundle
 import zhujiang.axi.AxiUtils
 import zhujiang.{NocIOHelper, ZJParametersKey, ZJRawModule}
@@ -176,10 +176,10 @@ class LNTop(implicit p:Parameters) extends ZJRawModule with NocIOHelper {
   }
   linknan.devicetree.DeviceTreeGenerator.lnGenerate(clusterP)
 
-  lazy val (io_perf, nr_perf) = HardenXSPerfAccumulate.reclaim()
-  val perf_out = IO(Output(new IOPerfOutput(nr_perf * (new PerfEventBundle).getWidth)))
+  lazy val io_perf = HardenXSPerfAccumulate.reclaim()
+  val perf_out = IO(Output(UInt(io_perf.getWidth.W)))
   withClock(io.noc_clock) {
-      perf_out.data := Cat(io_perf.asUInt)
+      perf_out := Cat(io_perf.map(_.value))
   }
   dontTouch(perf_out)
 
