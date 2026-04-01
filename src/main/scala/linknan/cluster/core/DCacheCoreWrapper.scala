@@ -92,6 +92,9 @@ class DCacheCoreWrapper (node:Node)(implicit p:Parameters) extends BaseCoreWrapp
     val pL2Sets = WireInit(0.U(64.W))
     BoringUtils.addSink(pL2Sets, "DSE_L2SETS")
     l2cache.module.io.sets := pL2Sets
+    val pL2Mshrs = WireInit(0.U(64.W))
+    BoringUtils.addSink(pL2Mshrs, "DSE_L2MSHRS")
+    l2cache.module.io.mshrs := pL2Mshrs
 
     tpMetaSinkNode.foreach(_.in.head._1.ready := false.B)
     tpMetaSourceNode.foreach(_.out.head._1 := DontCare)
