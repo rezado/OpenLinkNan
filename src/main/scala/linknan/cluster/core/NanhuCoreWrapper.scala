@@ -136,6 +136,9 @@ class NanhuCoreWrapper(node:Node)(implicit p:Parameters) extends BaseCoreWrapper
     val pL2Sets = WireInit(0.U(64.W))
     BoringUtils.addSink(pL2Sets, "DSE_L2SETS")
     _l2.io.sets := pL2Sets
+    val pL2Mshrs = WireInit(0.U(64.W))
+    BoringUtils.addSink(pL2Mshrs, "DSE_L2MSHRS")
+    _l2.io.mshrs := pL2Mshrs
 
     reset_state := (_core.io.resetInFrontend || implicitReset.asBool).asAsyncReset
 
